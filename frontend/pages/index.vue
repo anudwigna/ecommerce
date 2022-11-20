@@ -1,5 +1,23 @@
 <template>
   <div>
+    <SfHeader
+      logo="shopLogo"
+      title="Happytreats"
+      active-icon="account"
+      @click:account="onAccountClick"
+    >
+      <template v-if="categories" #navigation>
+        <SfHeaderNavigationItem
+          v-for="category in categories"
+          :key="`sf-header-navigation-item-${category.id}`"
+          :link="`/${category.code}`"
+          :label="category.name"
+        />
+      </template>
+      <template #search>
+        <p></p>
+      </template>
+    </SfHeader>
     <SfHero>
       <SfHeroItem
         title="Happytreats is my name."
@@ -50,7 +68,12 @@
 </template>
 
 <script>
-import { SfHero, SfCallToAction, SfProductCard } from '@storefront-ui/vue';
+import {
+  SfHero,
+  SfCallToAction,
+  SfProductCard,
+  SfHeader,
+} from '@storefront-ui/vue';
 import { gql } from 'graphql-tag';
 
 const ALL_ITEMS_QUERY = gql`
@@ -70,22 +93,56 @@ const ALL_ITEMS_QUERY = gql`
   }
 `;
 
+const ALL_CATEGORIES = gql`
+  query ALL_CATEGORIES {
+    facets(options: { filter: { name: { eq: "category" } } }) {
+      items {
+        name
+        code
+        values {
+          name
+          id
+          code
+        }
+      }
+    }
+  }
+`;
+
 export default {
   name: 'IndexPage',
   components: {
     SfHero,
     SfCallToAction,
     SfProductCard,
+    SfHeader,
   },
   data: function () {
     return {
       products: { items: [{ assets: [{ name: '' }] }] },
+      categories: [],
     };
   },
   apollo: {
     products: {
       query: ALL_ITEMS_QUERY,
       prefetch: true,
+    },
+    // facets: {
+    //   query: ALL_CATEGORIES,
+    //   prefetch: true,
+    // },
+  },
+  async mounted() {
+    const vm = this;
+    const result = await vm.$apollo.query({
+      query: ALL_CATEGORIES,
+    });
+    vm.categories = result.data.facets.items[0].values.slice(0, 3);
+  },
+  methods: {
+    onAccountClick: function () {
+      // console.log('HELLI');
     },
   },
 };
